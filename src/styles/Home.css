@@ -3,6 +3,9 @@
   min-height: 100vh;
   height: auto;
   padding: 4rem 0;
+  background-color: #21D4FD;
+  background-image: linear-gradient(0deg, #21D4FD 0%, #B721FF 100%);  
+  
 }
 
 .container {
@@ -10,6 +13,7 @@
   max-width: 1440px;
   padding: 0 1rem;
   margin: 0 auto;
+  text-align: center;
 }
 
 .gradient-text-0 {
