@@ -20,7 +20,6 @@
     "react": "^18.2",
     "react-bootstrap": "^2.8.0",
     "react-dom": "^18.2",
-    "react-lottie": "^1.2.3",
     "react-lottie-loader": "^1.1.0",
     "react-scripts": "^5.0.1",
     "stream": "^0.0.2",
