@@ -6,12 +6,14 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import "./styles/Home.css";
 import LottieLoader from 'react-lottie-loader';
 import trade from './assets/trade.json';
+import Confetti from 'react-confetti';
 
 export default function Home() {
   const [amountPILA, setAmountPILA] = useState(0);
   const [amountUSDT, setAmountUSDT] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
@@ -38,8 +40,13 @@ export default function Home() {
     return (value / 5);
   };
 
-
-
+  const onBuySuccess = () => {
+    setShowConfetti(true);
+    // Hide confetti after 5 seconds
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 5000);
+  };
   return (
     <main className="main">
       <div className="container">
@@ -71,13 +78,18 @@ export default function Home() {
                   />
                   <Form.Text>Required USDT: {amountUSDT}</Form.Text>
                 </Form.Group>
-                <Web3Button
-                  contractAddress={contractAddress}
-                  contractAbi={contractAbi}
-                  action={(contract) => contract.call("BuyPilaWithUSDT", [convertToSmallestUnitForBuy(amountUSDT)])}
-                >
-                  Buy PILA
-                </Web3Button>
+                {showConfetti && <Confetti />}
+
+<Web3Button
+  contractAddress={contractAddress}
+  contractAbi={contractAbi}
+  action={(contract) => {
+    contract.call("BuyPilaWithUSDT", [convertToSmallestUnitForBuy(amountUSDT)])
+      .then(onBuySuccess);
+  }}
+>
+  Buy PILA
+</Web3Button>
               </Tab>
               <Tab eventKey="sell" title="Sell">
                 <Form.Group>
