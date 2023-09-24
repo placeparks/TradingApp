@@ -46,10 +46,8 @@ export default function Home() {
   };
 
 
-  const calculateRequiredUSDT = (value) => {
-    if (!buyingPrice) return 0; // Return 0 if buyingPrice is not yet fetched
-    const requiredUSDT = (value * buyingPrice) / Math.pow(10, 6); // Assuming buyingPrice is in the smallest unit
-    return requiredUSDT;
+ const calculateRequiredUSDT = (value) => {
+    return (value / 5);
   };
   
 
@@ -67,13 +65,6 @@ export default function Home() {
         <p>
           You can buy PILA tokens using USDT. Not only that,
           but you can also convert your PILA tokens back to USDT whenever you want.
-        </p>
-
-        <p>
-          Current Buying Price: {buyingPrice ? buyingPrice : 'Loading...'}
-        </p>
-        <p>
-          Current Selling Price: {sellingPrice ? sellingPrice : 'Loading...'}
         </p>
         <Button onClick={handleShow}>Buy/Sell</Button>
         <LottieLoader animationData={trade} style={{ height: '400px' }} />
