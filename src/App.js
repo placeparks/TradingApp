@@ -24,7 +24,6 @@ export default function Home() {
     const fetchPrices = async () => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const contract = new ethers.Contract(contractAddress, contractAbi, provider);
-      const buyPrice = await contract.buyingPricePerUSDT();
       const sellPrice = await contract.sellingPricePerUSDT();
       setSellingPrice(ethers.utils.formatUnits(sellPrice, 'wei'));
     };
@@ -92,7 +91,7 @@ export default function Home() {
   contractAddress={contractAddress}
   contractAbi={contractAbi}
   action={(contract) => {
-    contract.call("BuyPilaWithUSDT", [convertToSmallestUnitForBuy(amountUSDT)])
+    contract.call("BuyPilaWithUSDT", [amountUSDT])
       .then(onBuySuccess);
   }}
 >
