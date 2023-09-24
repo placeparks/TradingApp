@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Tab, Tabs, Form } from 'react-bootstrap';
-import { Web3Button } from "@thirdweb-dev/react";
+import { Web3Button, ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { contractAddress, contractAbi } from "./contract";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./styles/Home.css";
@@ -19,6 +19,7 @@ export default function Home() {
 
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
+const address = useAddress();
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -63,7 +64,9 @@ export default function Home() {
           You can buy PILA tokens using USDT. Not only that,
           but you can also convert your PILA tokens back to USDT whenever you want.
         </p>
-        <Button onClick={handleShow}>Buy/Sell</Button>
+            <ConnectWallet  />
+<br/>
+{address ? <Button style={{marginTop:'1rem'}} onClick={handleShow}>Buy/Sell</Button> : ""}
         <LottieLoader animationData={trade} style={{ height: '400px' }} />
         <Modal show={showModal} onHide={handleClose}>
           <Modal.Header closeButton>
