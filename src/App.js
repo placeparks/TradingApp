@@ -15,7 +15,6 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
   const [showConfetti, setShowConfetti] = useState(false);
-  const [buyingPrice, setBuyingPrice] = useState(null);
   const [sellingPrice, setSellingPrice] = useState(null);
 
   const handleClose = () => setShowModal(false);
@@ -27,7 +26,6 @@ export default function Home() {
       const contract = new ethers.Contract(contractAddress, contractAbi, provider);
       const buyPrice = await contract.buyingPricePerUSDT();
       const sellPrice = await contract.sellingPricePerUSDT();
-      setBuyingPrice(ethers.utils.formatUnits(buyPrice, 'wei'));
       setSellingPrice(ethers.utils.formatUnits(sellPrice, 'wei'));
     };
     fetchPrices();
