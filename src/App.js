@@ -64,7 +64,7 @@ const address = useAddress();
           You can buy PILA tokens using USDT. Not only that,
           but you can also convert your PILA tokens back to USDT whenever you want.
         </p>
-            <ConnectWallet  />
+            <ConnectWallet theme="light" />
 <br/>
 {address ? <Button style={{marginTop:'1rem'}} onClick={handleShow}>Buy/Sell</Button> : ""}
         <LottieLoader animationData={trade} style={{ height: '400px' }} />
