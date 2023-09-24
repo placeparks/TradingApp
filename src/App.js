@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Tab, Tabs, Form } from 'react-bootstrap';
 import { Web3Button } from "@thirdweb-dev/react";
 import { contractAddress, contractAbi } from "./contract";
@@ -7,6 +7,7 @@ import "./styles/Home.css";
 import LottieLoader from 'react-lottie-loader';
 import trade from './assets/trade.json';
 import Confetti from 'react-confetti';
+import { ethers } from 'ethers';
 
 export default function Home() {
   const [amountPILA, setAmountPILA] = useState(0);
@@ -14,31 +15,43 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [buyingPrice, setBuyingPrice] = useState(null);
+  const [sellingPrice, setSellingPrice] = useState(null);
 
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
 
-  const roundToDecimals = (number, decimals) => {
-    const factor = Math.pow(10, decimals);
-    return Math.round(number * factor) / factor;
-  };
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const contract = new ethers.Contract(contractAddress, contractAbi, provider);
+      const buyPrice = await contract.buyingPricePerUSDT();
+      const sellPrice = await contract.sellingPricePerUSDT();
+      setBuyingPrice(ethers.utils.formatUnits(buyPrice, 'wei'));
+      setSellingPrice(ethers.utils.formatUnits(sellPrice, 'wei'));
+    };
+    fetchPrices();
+  }, []);
+
 
   const calculateReceivedUSDTForSelling = (value) => {
-    const conversionRate = 2.00e-7;
-    return roundToDecimals(value * conversionRate, 7);  // Assuming 7 decimal places for USDT
+    if (!sellingPrice) return 0; // Return 0 if sellingPrice is not yet fetched
+    const receivedUSDT = (value * sellingPrice) / Math.pow(10, 6); // Assuming sellingPrice is in the smallest unit
+    return receivedUSDT;
   };
+  
 
   const convertToSmallestUnitForBuy = (value) => {
     return value * Math.pow(10, 6);
   };
 
-  const convertToSmallestUnitForSell = (value) => {
-    return value * Math.pow(10, 6);
-  };
 
   const calculateRequiredUSDT = (value) => {
-    return (value / 5);
+    if (!buyingPrice) return 0; // Return 0 if buyingPrice is not yet fetched
+    const requiredUSDT = (value * buyingPrice) / Math.pow(10, 6); // Assuming buyingPrice is in the smallest unit
+    return requiredUSDT;
   };
+  
 
   const onBuySuccess = () => {
     setShowConfetti(true);
@@ -55,7 +68,13 @@ export default function Home() {
           You can buy PILA tokens using USDT. Not only that,
           but you can also convert your PILA tokens back to USDT whenever you want.
         </p>
-        
+
+        <p>
+          Current Buying Price: {buyingPrice ? buyingPrice : 'Loading...'}
+        </p>
+        <p>
+          Current Selling Price: {sellingPrice ? sellingPrice : 'Loading...'}
+        </p>
         <Button onClick={handleShow}>Buy/Sell</Button>
         <LottieLoader animationData={trade} style={{ height: '400px' }} />
         <Modal show={showModal} onHide={handleClose}>
@@ -100,7 +119,7 @@ export default function Home() {
                     onChange={(e) => setAmountPILA(e.target.value)}
                     placeholder="Enter amount of PILA to sell"
                   />
-                  <Form.Text>You will receive approximately {calculateReceivedUSDTForSelling(amountPILA).toFixed(7)} USDT for selling {amountPILA} PILA</Form.Text>
+                <Form.Text>You will receive approximately {calculateReceivedUSDTForSelling(amountPILA).toFixed(7)} USDT for selling {amountPILA} PILA</Form.Text>
                 </Form.Group>
                 <Web3Button
           contractAddress={contractAddress}
