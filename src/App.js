@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Tab, Tabs, Form } from 'react-bootstrap';
+import { Tab, Tabs, Form } from 'react-bootstrap';
 import { Web3Button, ConnectWallet, useAddress } from "@thirdweb-dev/react";
-import { contractAddress, contractAbi } from "./contract";
+import { contractAddress, contractAbi, usdtContractAddress, usdtContractAbi, pilaContractAbi, pilaContractAddress } from "./contract";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./styles/Home.css";
-import LottieLoader from 'react-lottie-loader';
-import trade from './assets/trade.json';
-import Confetti from 'react-confetti';
 import { ethers } from 'ethers';
 
 export default function Home() {
   const [amountPILA, setAmountPILA] = useState(0);
   const [amountUSDT, setAmountUSDT] = useState(0);
-  const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('buy');
-  const [showConfetti, setShowConfetti] = useState(false);
   const [sellingPrice, setSellingPrice] = useState(null);
-
-  const handleClose = () => setShowModal(false);
-  const handleShow = () => setShowModal(true);
-const address = useAddress();
+  const [isUSDTApproved, setIsUSDTApproved] = useState(false);
+  const [isPILAApproved, setIsPILAApproved] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const address = useAddress();
 
   useEffect(() => {
     const fetchPrices = async () => {
@@ -31,98 +26,176 @@ const address = useAddress();
     fetchPrices();
   }, []);
 
+  const onApproveStart = () => {
+    setIsApproving(true);
+  };
+
+  const onUSDTApproveSuccess = () => {
+    alert("USDT Approved Successfully!");
+    setIsUSDTApproved(true);
+    setIsApproving(false);
+  };
+
+  const onPILAApproveSuccess = () => {
+    alert("PILA Approved Successfully!");
+    setIsPILAApproved(true);
+    setIsApproving(false);
+  };
+
+  const onApproveFailure = () => {
+    alert("Cancelled! Approval not granted.");
+    setIsApproving(false);
+  };
+
+  useEffect(() => {
+    const checkUSDTAllowance = async () => {
+      if (address && usdtContractAddress && contractAddress) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const usdtContract = new ethers.Contract(usdtContractAddress, usdtContractAbi, provider);
+        const allowance = await usdtContract.allowance(address, contractAddress);
+        setIsUSDTApproved(ethers.utils.formatUnits(allowance, 6) >= amountUSDT);
+      }
+    };
+
+    const checkPILAAllowance = async () => {
+      if (address && pilaContractAddress && contractAddress) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const pilaContract = new ethers.Contract(pilaContractAddress, pilaContractAbi, provider);
+        const allowance = await pilaContract.allowance(address, contractAddress);
+        setIsPILAApproved(ethers.utils.formatUnits(allowance, 6) >= amountPILA);
+      }
+    };
+
+    if (address) {
+      checkUSDTAllowance();
+      checkPILAAllowance();
+    }
+  }, [address, amountUSDT, amountPILA]);
+
 
   const calculateReceivedUSDTForSelling = (value) => {
     if (!sellingPrice) return 0; // Return 0 if sellingPrice is not yet fetched
     const receivedUSDT = (value * sellingPrice) / Math.pow(10, 6); // Assuming sellingPrice is in the smallest unit
     return receivedUSDT;
   };
+
+ const calculateRequiredUSDT = (value) => {
+    return (value / 5);
   
+  };
 
   const convertToSmallestUnitForBuy = (value) => {
     return value * Math.pow(10, 6);
   };
 
-
- const calculateRequiredUSDT = (value) => {
-    return (value / 5);
-  };
-  
-
-  const onBuySuccess = () => {
-    setShowConfetti(true);
-    // Hide confetti after 5 seconds
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 5000);
-  };
   return (
     <main className="main">
       <div className="container">
-      <h1>Welcome to the PILA Exchange Platform!</h1>
-        <p>
-          You can buy PILA tokens using USDT. Not only that,
-          but you can also convert your PILA tokens back to USDT whenever you want.
-        </p>
-            <ConnectWallet />
-<br/>
-{address ? <Button style={{marginTop:'1rem'}} onClick={handleShow}>Buy/Sell</Button> : ""}
-        <LottieLoader animationData={trade} style={{ height: '400px' }} />
-        <Modal show={showModal} onHide={handleClose}>
-          <Modal.Header closeButton>
-            <Modal.Title>{activeTab === 'buy' ? 'Buy PILA' : 'Sell PILA'}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+        <h1>Connect your Wallet</h1>
+        <ConnectWallet />
+        <br />
+        {address ? (
+          <div className='card'>
             <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
               <Tab eventKey="buy" title="Buy">
-                <Form.Group>
-                  <Form.Label>Enter amount of PILA</Form.Label>
-                  <Form.Control 
-                    type="number"
-                    value={amountPILA}
-                    onChange={(e) => {
-                      setAmountPILA(e.target.value);
-                      setAmountUSDT(calculateRequiredUSDT(e.target.value));
-                    }}
-                    placeholder="Enter amount of PILA"
-                  />
-                  <Form.Text>Required USDT: {amountUSDT}</Form.Text>
-                </Form.Group>
-                {showConfetti && <Confetti />}
+              {!isUSDTApproved ? (
+    <Web3Button
+      contractAddress={usdtContractAddress}
+      contractAbi={usdtContractAbi}
+      action={async (contract) => {
+        await contract.call("approve", [contractAddress, ethers.utils.parseUnits(String(amountUSDT), 6)]);
+      }}
+      onStart={onApproveStart}
+      onSuccess={onUSDTApproveSuccess}
+      onFailure={onApproveFailure}
+    >
+      {isApproving ? "Waiting for Approval..." : "Set Allowance for USDT"}
+    </Web3Button>
+  ) : null}
+              <Form.Group>
+  <Form.Label>Set USDT Allowance</Form.Label>
+  <Form.Control
+    type="number"
+    value={amountPILA}
+    onChange={(e) => {
+      setAmountPILA(e.target.value);
+      setAmountUSDT(calculateRequiredUSDT(e.target.value));
+    }}
+    placeholder="Enter amount of PILA"
+  />
+    <Form.Text>Required USDT: {amountUSDT}</Form.Text>
+</Form.Group>
 
-<Web3Button
-  contractAddress={contractAddress}
-  contractAbi={contractAbi}
-  action={(contract) => {
-    contract.call("BuyPilaWithUSDT", [amountUSDT])
-      .then(onBuySuccess);
-  }}
->
-  Buy PILA
-</Web3Button>
-              </Tab>
-              <Tab eventKey="sell" title="Sell">
+{isUSDTApproved && (
+            <Web3Button
+            contractAddress={contractAddress}
+            contractAbi={contractAbi}
+            action={async (contract) => {
+              try {
+                await contract.call("BuyPilaWithUSDT", [amountUSDT * Math.pow(10, 6)]);
+              } catch (e) {
+                alert("Transaction Cancelled");
+              }
+            }}
+          >
+            Buy PILA
+          </Web3Button>
+          
+                )}
+ </Tab>
+
+
+ <Tab eventKey="sell" title="Sell">
+  {!isPILAApproved ? (
+ <Web3Button
+                  contractAddress={pilaContractAddress}
+                  contractAbi={pilaContractAbi}
+                  action={async (contract) => {
+                    await contract.call("approve", [contractAddress, ethers.utils.parseUnits(String(amountPILA), 6)]);
+                  }}
+                  onStart={onApproveStart}
+                  onSuccess={onPILAApproveSuccess}
+                  onFailure={onApproveFailure}
+                >
+                  {isApproving ? "Waiting for Approval..." : "Set Allowance for PILA"}
+                </Web3Button>
+                  ) : null}
                 <Form.Group>
                   <Form.Label>Enter amount of PILA to sell</Form.Label>
                   <Form.Control 
-                    type="number"
-                    value={amountPILA}
-                    onChange={(e) => setAmountPILA(e.target.value)}
-                    placeholder="Enter amount of PILA to sell"
-                  />
+  type="number"
+  value={amountPILA}
+  onChange={(e) => {
+    console.log("Setting amountPILA to: ", e.target.value);
+    setAmountPILA(e.target.value);
+    setAmountUSDT(calculateRequiredUSDT(e.target.value));
+  }}
+  placeholder="Enter amount of PILA"
+/>
+
                 <Form.Text>You will receive approximately {calculateReceivedUSDTForSelling(amountPILA).toFixed(7)} USDT for selling {amountPILA} PILA</Form.Text>
                 </Form.Group>
-                <Web3Button
-          contractAddress={contractAddress}
-          contractAbi={contractAbi}
-          action={(contract) => contract.call("SellPilaForUSDT", [amountPILA])}
-        >
-          Sell PILA
-        </Web3Button>
+                {isPILAApproved && (
+              <Web3Button
+              contractAddress={contractAddress}
+              contractAbi={contractAbi}
+              action={async (contract) => {
+                try {
+                  const smallestUnit = amountPILA * Math.pow(10, 6);
+                  await contract.call("SellPilaForUSDT", [smallestUnit]);
+                } catch (e) {
+                  alert("Transaction Cancelled");
+                }
+              }}
+            >
+              Sell PILA
+            </Web3Button>
+            
+                )}
               </Tab>
             </Tabs>
-          </Modal.Body>
-        </Modal>
+          </div>
+        ) : ""}
       </div>
     </main>
   );
