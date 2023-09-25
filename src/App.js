@@ -173,7 +173,8 @@ export default function Home() {
   placeholder="Enter amount of PILA"
 />
 
-                <Form.Text>You will receive approximately {calculateReceivedUSDTForSelling(amountPILA).toFixed(7)} USDT for selling {amountPILA} PILA</Form.Text>
+             <Form.Text>You will receive approximately {Math.floor(calculateReceivedUSDTForSelling(amountPILA)) === calculateReceivedUSDTForSelling(amountPILA) ? Math.floor(calculateReceivedUSDTForSelling(amountPILA)) : Number(calculateReceivedUSDTForSelling(amountPILA)).toFixed(1)} USDT for selling {amountPILA} PILA</Form.Text>
+
                 </Form.Group>
                 {isPILAApproved && (
               <Web3Button
