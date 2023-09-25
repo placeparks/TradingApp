@@ -47,15 +47,16 @@ export default function Home() {
     setIsApproving(false);
   };
 
-    useEffect(() => {
-      const checkUSDTAllowance = async () => {
-        if (address && usdtContractAddress && contractAddress) {
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const usdtContract = new ethers.Contract(usdtContractAddress, usdtContractAbi, provider);
-          const allowance = await usdtContract.allowance(address, contractAddress);
-          setIsUSDTApproved(ethers.utils.formatUnits(allowance, 6) >= amountUSDT);
-        }
-      };
+  useEffect(() => {
+    const checkUSDTAllowance = async () => {
+      if (address && usdtContractAddress && contractAddress) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const usdtContract = new ethers.Contract(usdtContractAddress, usdtContractAbi, provider);
+        const allowance = await usdtContract.allowance(address, contractAddress);
+        setIsUSDTApproved(ethers.utils.formatUnits(allowance, 6) >= amountUSDT);
+      }
+    };
+  
     const checkPILAAllowance = async () => {
       if (address && pilaContractAddress && contractAddress) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -64,11 +65,31 @@ export default function Home() {
         setIsPILAApproved(ethers.utils.formatUnits(allowance, 6) >= amountPILA);
       }
     };
+    const checkPILAAllowanceAndBalance = async () => {
+      if (address && pilaContractAddress && contractAddress) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const pilaContract = new ethers.Contract(pilaContractAddress, pilaContractAbi, provider);
+        
+        // Check for PILA balance
+        const balance = await pilaContract.balanceOf(address);
+        if (ethers.utils.formatUnits(balance, 6) === '0') {
+          setIsPILAApproved(false);
+          return;
+        }
+  
+        // Check for allowance if balance is not zero
+        const allowance = await pilaContract.allowance(address, contractAddress);
+        setIsPILAApproved(ethers.utils.formatUnits(allowance, 6) >= amountPILA);
+      }
+    };
+  
 
     if (address) {
-      checkUSDTAllowance();
-      checkPILAAllowance();
+      setIsUSDTApproved(false);
+      checkUSDTAllowance(false);
+      checkPILAAllowanceAndBalance();
     }
+    
   }, [address, amountUSDT, amountPILA]);
 
 
@@ -91,28 +112,18 @@ export default function Home() {
     <main className="main">
       <div className="container">
         <h1>Connect your Wallet</h1>
-        <ConnectWallet />
-        <br />
+        <ConnectWallet  style={{marginBottom:"2rem"}}/>
+        <br/>
         {address ? (
           <div className='card'>
+            <h6>Transaction occurs in two steps:</h6>
+            <p><b>1- Approve the transfer amount</b></p>
+            <p style={{marginBottom:"1rem"}}><b>2- Confirm the swap</b></p>
             <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
               <Tab eventKey="buy" title="Buy">
-              {!isUSDTApproved ? (
-    <Web3Button
-      contractAddress={usdtContractAddress}
-      contractAbi={usdtContractAbi}
-      action={async (contract) => {
-        await contract.call("approve", [contractAddress, ethers.utils.parseUnits(String(amountUSDT), 6)]);
-      }}
-      onStart={onApproveStart}
-      onSuccess={onUSDTApproveSuccess}
-      onFailure={onApproveFailure}
-    >
-      {isApproving ? "Waiting for Approval..." : "Set Allowance for USDT"}
-    </Web3Button>
-  ) : null}
+
               <Form.Group>
-  <Form.Label>Set USDT Allowance</Form.Label>
+  <Form.Label></Form.Label>
   <Form.Control
     type="number"
     value={amountPILA}
@@ -124,7 +135,20 @@ export default function Home() {
   />
     <Form.Text>Required USDT: {amountUSDT}</Form.Text>
 </Form.Group>
-
+{!isUSDTApproved ? (
+    <Web3Button
+      contractAddress={usdtContractAddress}
+      contractAbi={usdtContractAbi}
+      action={async (contract) => {
+        await contract.call("approve", [contractAddress, ethers.utils.parseUnits(String(amountUSDT), 6)]);
+      }}
+      onStart={onApproveStart}
+      onSuccess={onUSDTApproveSuccess}
+      onFailure={onApproveFailure}
+    >
+Approve    
+</Web3Button>
+  ) : null}
 {isUSDTApproved && (
             <Web3Button
             contractAddress={contractAddress}
@@ -147,22 +171,9 @@ export default function Home() {
 
 
  <Tab eventKey="sell" title="Sell">
-  {!isPILAApproved ? (
- <Web3Button
-                  contractAddress={pilaContractAddress}
-                  contractAbi={pilaContractAbi}
-                  action={async (contract) => {
-                    await contract.call("approve", [contractAddress, ethers.utils.parseUnits(String(amountPILA), 6)]);
-                  }}
-                  onStart={onApproveStart}
-                  onSuccess={onPILAApproveSuccess}
-                  onFailure={onApproveFailure}
-                >
-                  {isApproving ? "Waiting for Approval..." : "Set Allowance for PILA"}
-                </Web3Button>
-                  ) : null}
+ 
                 <Form.Group>
-                  <Form.Label>Enter amount of PILA to sell</Form.Label>
+                  <Form.Label></Form.Label>
                   <Form.Control 
   type="number"
   value={amountPILA}
@@ -176,6 +187,19 @@ export default function Home() {
 
 <Form.Text>You will receive approximately {Math.floor(calculateReceivedUSDTForSelling(amountPILA)) === calculateReceivedUSDTForSelling(amountPILA) ? Math.floor(calculateReceivedUSDTForSelling(amountPILA)) : Number(calculateReceivedUSDTForSelling(amountPILA)).toFixed(1)} USDT for selling {amountPILA} PILA</Form.Text>
                 </Form.Group>
+                {!isPILAApproved ? (
+ <Web3Button
+                  contractAddress={pilaContractAddress}
+                  contractAbi={pilaContractAbi}
+                  action={async (contract) => {
+                    await contract.call("approve", [contractAddress, ethers.utils.parseUnits(String(amountPILA), 6)]);
+                  }}
+                  onStart={onApproveStart}
+                  onSuccess={onPILAApproveSuccess}
+                  onFailure={onApproveFailure}
+                >
+Approve                </Web3Button>
+                  ) : null}
                 {isPILAApproved && (
               <Web3Button
               contractAddress={contractAddress}
