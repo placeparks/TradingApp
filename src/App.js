@@ -47,16 +47,15 @@ export default function Home() {
     setIsApproving(false);
   };
 
-  useEffect(() => {
-    const checkUSDTAllowance = async () => {
-      if (address && usdtContractAddress && contractAddress) {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const usdtContract = new ethers.Contract(usdtContractAddress, usdtContractAbi, provider);
-        const allowance = await usdtContract.allowance(address, contractAddress);
-        setIsUSDTApproved(ethers.utils.formatUnits(allowance, 6) >= amountUSDT);
-      }
-    };
-
+    useEffect(() => {
+      const checkUSDTAllowance = async () => {
+        if (address && usdtContractAddress && contractAddress) {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const usdtContract = new ethers.Contract(usdtContractAddress, usdtContractAbi, provider);
+          const allowance = await usdtContract.allowance(address, contractAddress);
+          setIsUSDTApproved(ethers.utils.formatUnits(allowance, 6) >= amountUSDT);
+        }
+      };
     const checkPILAAllowance = async () => {
       if (address && pilaContractAddress && contractAddress) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -137,6 +136,8 @@ export default function Home() {
                 alert("Transaction Cancelled");
               }
             }}
+            onSuccess={(result) => alert("Purchase Successful!")}
+
           >
             Buy PILA
           </Web3Button>
@@ -173,9 +174,7 @@ export default function Home() {
   placeholder="Enter amount of PILA"
 />
 
-       <Form.Text>You will receive approximately {Math.floor(calculateReceivedUSDTForSelling(amountPILA)) === calculateReceivedUSDTForSelling(amountPILA) ? Math.floor(calculateReceivedUSDTForSelling(amountPILA)) : Number(calculateReceivedUSDTForSelling(amountPILA)).toFixed(1)} USDT for selling {amountPILA} PILA</Form.Text>
-
-
+<Form.Text>You will receive approximately {Math.floor(calculateReceivedUSDTForSelling(amountPILA)) === calculateReceivedUSDTForSelling(amountPILA) ? Math.floor(calculateReceivedUSDTForSelling(amountPILA)) : Number(calculateReceivedUSDTForSelling(amountPILA)).toFixed(1)} USDT for selling {amountPILA} PILA</Form.Text>
                 </Form.Group>
                 {isPILAApproved && (
               <Web3Button
@@ -189,6 +188,7 @@ export default function Home() {
                   alert("Transaction Cancelled");
                 }
               }}
+              onSuccess={(result) => alert("Sold Successfully!")}
             >
               Sell PILA
             </Web3Button>
