@@ -111,14 +111,14 @@ export default function Home() {
   return (
     <main className="main">
       <div className="container">
-        <h1>Connect your Wallet</h1>
+       {address ? <h1>Welcome</h1> : <h1>Connect your Wallet</h1>}
         <ConnectWallet  style={{marginBottom:"2rem"}}/>
         <br/>
         {address ? (
           <div className='card'>
-            <h6>Transaction occurs in two steps:</h6>
-            <p><b>1- Approve the transfer amount</b></p>
-            <p style={{marginBottom:"1rem"}}><b>2- Confirm the swap</b></p>
+            <h6 style={{color:"black"}}>Transaction occurs in two steps:</h6>
+            <p style={{color:"black"}}><b>1- Approve the transfer amount</b></p>
+            <p style={{marginBottom:"1rem", color:"black"}}><b>2- Confirm the swap</b></p>
             <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
               <Tab eventKey="buy" title="Buy">
 
